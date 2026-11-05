@@ -1,0 +1,530 @@
+/* ==========================================================================
+   KasirKu POS - Cart.css
+   Warna Utama: Hijau Tua #0F5132 & Abu Terang #F3F4F6
+   Gaya: Kartu Putih, Tombol Hijau, Teks Total Tebal dan Besar
+   ========================================================================== */
+
+:root {
+  --pos-primary: #0F5132;
+  --pos-primary-hover: #0a3622;
+  --pos-primary-active: #072417;
+  --pos-primary-light: #e8f5e9;
+  --pos-primary-border: #bbf7d0;
+  --pos-bg-light: #F3F4F6;
+  --pos-card-bg: #FFFFFF;
+  --pos-text-dark: #111827;
+  --pos-text-muted: #6B7280;
+  --pos-border: #E5E7EB;
+  --pos-danger: #EF4444;
+  --pos-danger-hover: #DC2626;
+  --pos-danger-light: #FEE2E2;
+}
+
+/* Container Kartu Putih */
+.cart-card {
+  background-color: var(--pos-card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--pos-border);
+  box-shadow: 0 4px 20px -2px rgba(15, 81, 50, 0.06), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* Header Keranjang */
+.cart-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--pos-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #FFFFFF;
+}
+
+.cart-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background-color: var(--pos-primary-light);
+  color: var(--pos-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-title-text {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--pos-text-dark);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.cart-order-badge {
+  font-size: 0.75rem;
+  color: var(--pos-text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cart-clear-btn {
+  background: none;
+  border: 1px solid #FCA5A5;
+  color: var(--pos-danger);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.cart-clear-btn:hover {
+  background-color: var(--pos-danger-light);
+  border-color: var(--pos-danger);
+}
+
+.cart-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--pos-border);
+  color: var(--pos-text-muted);
+}
+
+/* Info Pelanggan & Catatan Singkat (Kasir Cepat) */
+.cart-customer-strip {
+  padding: 10px 20px;
+  background-color: #FAFAFA;
+  border-bottom: 1px solid var(--pos-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.8125rem;
+}
+
+.cart-customer-input {
+  border: 1px solid var(--pos-border);
+  background-color: #FFFFFF;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8125rem;
+  width: 100%;
+  max-width: 220px;
+  color: var(--pos-text-dark);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.cart-customer-input:focus {
+  border-color: var(--pos-primary);
+  box-shadow: 0 0 0 2px rgba(15, 81, 50, 0.12);
+}
+
+/* Area Daftar Item */
+.cart-items-wrapper {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  min-height: 180px;
+}
+
+/* Scrollbar Custom */
+.cart-items-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.cart-items-wrapper::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+.cart-items-wrapper::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 4px;
+}
+.cart-items-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Item Keranjang */
+.cart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--pos-border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cart-item:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.cart-item-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--pos-border);
+  background-color: var(--pos-bg-light);
+}
+
+.cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-item-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--pos-text-dark);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-item-unit-price {
+  font-size: 0.775rem;
+  color: var(--pos-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+/* Kontrol Quantity (Qty Stepper) */
+.cart-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--pos-bg-light);
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.cart-qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background-color: #FFFFFF;
+  color: var(--pos-text-dark);
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.cart-qty-btn:hover {
+  background-color: var(--pos-primary);
+  color: #FFFFFF;
+}
+
+.cart-qty-btn:active {
+  transform: scale(0.92);
+}
+
+.cart-qty-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--pos-text-dark);
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtotal Item & Tombol Hapus */
+.cart-item-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: right;
+}
+
+.cart-item-subtotal {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--pos-text-dark);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.cart-item-remove-btn {
+  background: none;
+  border: none;
+  color: #9CA3AF;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cart-item-remove-btn:hover {
+  background-color: var(--pos-danger-light);
+  color: var(--pos-danger);
+}
+
+/* Empty State */
+.cart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--pos-text-muted);
+}
+
+.cart-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--pos-bg-light);
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.cart-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pos-text-dark);
+  margin: 0 0 6px 0;
+}
+
+.cart-empty-desc {
+  font-size: 0.8125rem;
+  color: var(--pos-text-muted);
+  margin: 0 0 16px 0;
+  max-width: 240px;
+  line-height: 1.4;
+}
+
+/* Bagian Bawah: Ringkasan & Total */
+.cart-footer {
+  border-top: 1px solid var(--pos-border);
+  background-color: #FAFAFA;
+  padding: 16px 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Rincian Angka Subtotal, Diskon, Pajak */
+.cart-summary-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--pos-text-muted);
+}
+
+.cart-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-summary-row span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--pos-text-dark);
+}
+
+.cart-summary-row.discount span:last-child {
+  color: #16A34A;
+}
+
+.cart-divider {
+  height: 1px;
+  background-color: var(--pos-border);
+  margin: 4px 0;
+}
+
+/* Baris Total Belanja - TEKS TEBAL & BESAR */
+.cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 4px;
+}
+
+.cart-total-label-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-total-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pos-text-muted);
+  margin: 0;
+}
+
+.cart-total-items-count {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin-top: 2px;
+}
+
+/* TEKS TOTAL TEBAL DAN BESAR */
+.cart-total-amount {
+  font-size: 1.875rem; /* ~30px */
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--pos-primary); /* Hijau Tua #0F5132 */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 1px rgba(15, 81, 50, 0.08);
+}
+
+/* TOMBOL BESAR 'BAYAR' */
+.cart-pay-button {
+  width: 100%;
+  height: 56px;
+  background-color: var(--pos-primary); /* #0F5132 */
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(15, 81, 50, 0.35);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.cart-pay-button:hover:not(:disabled) {
+  background-color: var(--pos-primary-hover); /* #0a3622 */
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15, 81, 50, 0.45);
+}
+
+.cart-pay-button:active:not(:disabled) {
+  background-color: var(--pos-primary-active);
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(15, 81, 50, 0.3);
+}
+
+.cart-pay-button:disabled {
+  background-color: #9CA3AF;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cart-pay-shortcut {
+  font-size: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Modal Pembayaran Cepat Kasir */
+.pos-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: posFadeIn 0.15s ease-out;
+}
+
+.pos-modal-card {
+  background-color: #FFFFFF;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: posSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pos-modal-header {
+  padding: 18px 22px;
+  background-color: var(--pos-primary);
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pos-modal-body {
+  padding: 22px;
+}
+
+.pos-cash-quick-btn {
+  background-color: var(--pos-bg-light);
+  border: 1px solid var(--pos-border);
+  color: var(--pos-text-dark);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-variant-numeric: tabular-nums;
+}
+
+.pos-cash-quick-btn:hover {
+  background-color: var(--pos-primary-light);
+  border-color: var(--pos-primary);
+  color: var(--pos-primary);
+}
+
+@keyframes posFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes posSlideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

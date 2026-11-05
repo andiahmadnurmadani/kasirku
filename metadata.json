@@ -1,0 +1,6 @@
+{
+  "name": "KasirKu POS - Kasir Pintar & Cepat",
+  "description": "Aplikasi Kasir POS modern dan cepat dengan komponen Cart interaktif, penghitungan otomatis, dan sistem pembayaran instan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
