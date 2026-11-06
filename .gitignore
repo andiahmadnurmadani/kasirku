@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# File pribadi (bukan bagian aplikasi kasir)
+catatan-pkm/
+logo-semut/
+cleanup-disk.ps1

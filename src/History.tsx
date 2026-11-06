@@ -41,6 +41,7 @@ export interface Transaction {
   cashGiven?: number;
   change?: number;
   status: 'Selesai' | 'Dibatalkan';
+  isSyncedToDb?: boolean;
 }
 
 interface HistoryProps {
@@ -390,9 +391,21 @@ export default function History({ transactions, onBackToPos }: HistoryProps) {
                       key={trx.orderId}
                       className="hover:bg-gray-50/70 transition-colors group"
                     >
-                      {/* No. Transaksi */}
+                      {/* No. Transaksi & Status Sync */}
                       <td className="py-3.5 px-4 font-mono font-bold text-[#0F5132]">
-                        {trx.orderId}
+                        <div className="flex flex-col gap-1 items-start">
+                          <span>{trx.orderId}</span>
+                          {trx.isSyncedToDb === false ? (
+                            <span className="text-[10px] font-sans font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.2 rounded">
+                              ⚠️ Lokal (Belum Masuk DB)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-sans font-medium text-emerald-700 flex items-center gap-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                              MySQL
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Waktu */}

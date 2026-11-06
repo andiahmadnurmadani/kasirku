@@ -65,13 +65,15 @@ const DEFAULT_INITIAL_ITEMS = [
  * @param {Function} [props.onCheckoutSuccess] - (Opsional) callback setelah pembayaran selesai
  * @param {string} [props.customerName] - (Opsional) nama pelanggan atau nomor meja
  * @param {Function} [props.onCustomerNameChange] - (Opsional) callback perubahan nama pelanggan
+ * @param {boolean} [props.isDbOnline] - (Opsional) status koneksi database MySQL
  */
 export default function Cart({
   externalCart,
   onCartChange,
   onCheckoutSuccess,
   customerName: externalCustomer,
-  onCustomerNameChange
+  onCustomerNameChange,
+  isDbOnline = false,
 }) {
   // State keranjang belanja (cart)
   const [cart, setCart] = useState(externalCart || DEFAULT_INITIAL_ITEMS);
@@ -788,6 +790,30 @@ export default function Cart({
                     </div>
                   </>
                 )}
+              </div>
+
+              {/* Status Penyimpanan Database MySQL */}
+              <div
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  marginBottom: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  backgroundColor: isDbOnline ? '#ECFDF5' : '#FFFBEB',
+                  color: isDbOnline ? '#065F46' : '#92400E',
+                  border: `1px solid ${isDbOnline ? '#A7F3D0' : '#FDE68A'}`,
+                }}
+              >
+                <span>
+                  {isDbOnline
+                    ? '● Tersimpan di Database MySQL'
+                    : '⚠ Tersimpan Sementara di Browser (MySQL Offline)'}
+                </span>
               </div>
 
               {/* Notifikasi Sukses PDF */}

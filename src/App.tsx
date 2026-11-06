@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Cart, { formatRupiah } from './Cart.jsx';
 import History, { Transaction } from './History.tsx';
+import ManageMenu from './ManageMenu.tsx';
+import {
+  fetchProducts,
+  fetchCategories,
+  fetchTransactions,
+  saveTransaction,
+  checkBackendHealth,
+  MenuItem,
+  Category,
+} from './services/api.ts';
 import { 
   Search, 
   Store, 
@@ -13,18 +23,31 @@ import {
   Flame,
   Plus,
   Receipt,
-  LayoutGrid
+  LayoutGrid,
+  AlertTriangle,
+  RefreshCw,
+  Database,
+  X,
+  CheckCircle2,
+  Package,
+  Tag
 } from 'lucide-react';
 
-interface MenuItem {
-  id: number;
-  name: string;
-  category: 'makanan' | 'minuman' | 'snack' | 'paket';
-  price: number;
-  popular?: boolean;
-  image: string;
-  desc?: string;
-}
+// Kategori bawaan (dipakai saat MySQL offline). Saat online, kategori diambil dari database.
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 1, slug: 'makanan', name: 'Makanan', productCount: 0 },
+  { id: 2, slug: 'minuman', name: 'Minuman', productCount: 0 },
+  { id: 3, slug: 'snack', name: 'Cemilan', productCount: 0 },
+  { id: 4, slug: 'paket', name: 'Paket Hemat', productCount: 0 },
+];
+
+// Ikon untuk kategori yang dikenal; kategori baru memakai ikon Tag
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
+  makanan: UtensilsCrossed,
+  minuman: Coffee,
+  snack: Cookie,
+  paket: Flame,
+};
 
 const MENU_CATALOG: MenuItem[] = [
   // Makanan
@@ -164,82 +187,120 @@ const MENU_CATALOG: MenuItem[] = [
   },
 ];
 
-// Data Riwayat Awal untuk KasirKu
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  {
-    orderId: 'TRX-948102',
-    date: '30 Okt 2026',
-    time: '18:42',
-    customer: 'Meja 02 - Kak Dian',
-    cashier: 'Kasir 01 (Siti)',
-    items: [
-      { id: 1, name: 'Ayam Goreng Lengkuas', price: 28000, qty: 2, image: '/src/assets/images/ayam_goreng_lengkuas_1793416315782.jpg' },
-      { id: 7, name: 'Es Teh Manis Jumbo', price: 6000, qty: 2, image: '/src/assets/images/es_teh_manis_jumbo_1793416317814.jpg' },
-      { id: 11, name: 'Tahu Cabe Garam Krispi', price: 14000, qty: 1, image: '/src/assets/images/tahu_cabe_garam_1793416319216.jpg' },
-    ],
-    subtotal: 82000,
-    tax: 8200,
-    total: 90200,
-    method: 'qris',
-    status: 'Selesai',
-  },
-  {
-    orderId: 'TRX-948089',
-    date: '30 Okt 2026',
-    time: '17:30',
-    customer: 'Meja 09 - Mas Rian',
-    cashier: 'Kasir 01 (Siti)',
-    items: [
-      { id: 3, name: 'Nasi Goreng Spesial KasirKu', price: 24000, qty: 2, image: '/src/assets/images/nasi_goreng_spesial_1793416316160.jpg' },
-      { id: 9, name: 'Kopi Susu Gula Aren', price: 18000, qty: 2, image: '/src/assets/images/kopi_susu_aren_1793416316788.jpg' },
-    ],
-    subtotal: 84000,
-    tax: 8400,
-    total: 92400,
-    method: 'cash',
-    cashGiven: 100000,
-    change: 7600,
-    status: 'Selesai',
-  },
-  {
-    orderId: 'TRX-948065',
-    date: '30 Okt 2026',
-    time: '16:15',
-    customer: 'Takeaway - Mbak Lina',
-    cashier: 'Kasir 01 (Siti)',
-    items: [
-      { id: 14, name: 'Paket Hemat: Ayam + Nasi + Es Teh', price: 35000, qty: 3, image: '/src/assets/images/ayam_goreng_lengkuas_1793416315782.jpg' },
-      { id: 13, name: 'Tempe Mendoan (4 pcs)', price: 12000, qty: 2, image: '/src/assets/images/tahu_cabe_garam_1793416319216.jpg' },
-    ],
-    subtotal: 129000,
-    tax: 12900,
-    total: 141900,
-    method: 'debit',
-    status: 'Selesai',
-  },
-  {
-    orderId: 'TRX-948030',
-    date: '30 Okt 2026',
-    time: '14:05',
-    customer: 'Meja 04 - Pak Joko',
-    cashier: 'Kasir 01 (Siti)',
-    items: [
-      { id: 2, name: 'Bebek Goreng Sambal Korek', price: 35000, qty: 2, image: '/src/assets/images/ayam_goreng_lengkuas_1793416315782.jpg' },
-      { id: 8, name: 'Es Jeruk Peras Segar', price: 9000, qty: 2, image: '/src/assets/images/es_teh_manis_jumbo_1793416317814.jpg' },
-    ],
-    subtotal: 88000,
-    tax: 8800,
-    total: 96800,
-    method: 'cash',
-    cashGiven: 100000,
-    change: 3200,
-    status: 'Selesai',
-  },
-];
-
 export default function App() {
-  const [currentView, setCurrentView] = useState<'pos' | 'history'>('pos');
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [currentView, setCurrentView] = useState<'pos' | 'history' | 'manage'>('pos');
+  const [products, setProducts] = useState<MenuItem[]>(MENU_CATALOG);
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+
+  // Muat ulang produk & kategori dari database (dipakai setelah tambah/ubah/hapus)
+  const reloadMenuData = async () => {
+    const [apiProducts, apiCategories] = await Promise.all([fetchProducts(), fetchCategories()]);
+    if (apiProducts) setProducts(apiProducts);
+    if (apiCategories) setCategories(apiCategories);
+  };
+  // Riwayat dimulai kosong lalu diisi dari database MySQL (tidak ada data contoh di kode).
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isDbOnline, setIsDbOnline] = useState<boolean>(false);
+  const [isCheckingConn, setIsCheckingConn] = useState<boolean>(false);
+  const [syncNotice, setSyncNotice] = useState<{
+    type: 'success' | 'warning' | 'info';
+    title: string;
+    message: string;
+  } | null>(null);
+
+  // Ambil data produk & transaksi dari Backend MySQL saat pertama kali dimuat
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDataFromBackend() {
+      const health = await checkBackendHealth();
+      const dbConnected = Boolean(health?.database?.connected);
+      if (isMounted) {
+        setIsDbOnline(dbConnected);
+      }
+
+      if (dbConnected) {
+        const [apiProducts, apiCategories] = await Promise.all([fetchProducts(), fetchCategories()]);
+        // Pakai data database apa adanya (termasuk bila kosong)
+        if (isMounted && apiProducts) setProducts(apiProducts);
+        if (isMounted && apiCategories) setCategories(apiCategories);
+
+        const apiTrx = await fetchTransactions();
+        // Pakai data database apa adanya, termasuk bila kosong (0 transaksi).
+        if (isMounted && apiTrx) {
+          setTransactions(apiTrx);
+        }
+      } else {
+        if (isMounted) {
+          setSyncNotice({
+            type: 'warning',
+            title: 'MySQL Belum Terhubung (Mode Offline)',
+            message: 'Database MySQL di 127.0.0.1:3306 belum aktif. Transaksi saat ini hanya tersimpan di memori browser.',
+          });
+        }
+      }
+    }
+
+    loadDataFromBackend();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fungsi Cek Ulang Koneksi dan Auto-Sync data offline
+  const handleCheckConnection = async () => {
+    setIsCheckingConn(true);
+    try {
+      const health = await checkBackendHealth();
+      const dbConnected = Boolean(health?.database?.connected);
+      setIsDbOnline(dbConnected);
+
+      if (dbConnected) {
+        await reloadMenuData();
+        // Cari transaksi lokal yang belum tersimpan ke MySQL
+        const unsynced = transactions.filter((t) => t.isSyncedToDb === false);
+        if (unsynced.length > 0) {
+          let syncedCount = 0;
+          for (const item of unsynced) {
+            const res = await saveTransaction(item);
+            if (res.success) syncedCount++;
+          }
+
+          setTransactions((prev) =>
+            prev.map((t) => ({ ...t, isSyncedToDb: true }))
+          );
+
+          setSyncNotice({
+            type: 'success',
+            title: 'Koneksi MySQL Pulih!',
+            message: `MySQL berhasil terhubung & ${syncedCount} transaksi offline otomatis disinkronkan ke database.`,
+          });
+        } else {
+          setSyncNotice({
+            type: 'success',
+            title: 'MySQL Terhubung',
+            message: 'Koneksi database MySQL aktif dan tersinkronisasi sempurna.',
+          });
+        }
+      } else {
+        setSyncNotice({
+          type: 'warning',
+          title: 'MySQL Masih Offline (ECONNREFUSED)',
+          message: 'Server belum dapat terhubung ke 127.0.0.1:3306. Pastikan Laragon atau XAMPP sudah dinyalakan (klik "Start All").',
+        });
+      }
+    } catch {
+      setIsDbOnline(false);
+      setSyncNotice({
+        type: 'warning',
+        title: 'Backend API Belum Berjalan',
+        message: 'Tidak dapat menjangkau server backend di port 5000. Jalankan "npm run server".',
+      });
+    } finally {
+      setIsCheckingConn(false);
+    }
+  };
 
   const [cart, setCart] = useState([
     { 
@@ -266,12 +327,19 @@ export default function App() {
   ]);
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
+
+  // Bila kategori yang sedang dipilih dihapus/diganti slug-nya, kembali ke "Semua Menu"
+  useEffect(() => {
+    if (activeCategory !== 'all' && !categories.some((c) => c.slug === activeCategory)) {
+      setActiveCategory('all');
+    }
+  }, [categories, activeCategory]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('Meja 05 - Budi');
   const [addedNotice, setAddedNotice] = useState<string | null>(null);
 
   // Filter daftar menu
-  const filteredMenu = MENU_CATALOG.filter((item) => {
+  const filteredMenu = products.filter((item) => {
     const matchCategory = activeCategory === 'all' || item.category === activeCategory;
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCategory && matchSearch;
@@ -305,8 +373,8 @@ export default function App() {
     }, 1200);
   };
 
-  // Callback saat pembayaran sukses di Cart: otomatis simpan ke Riwayat Transaksi!
-  const handleCheckoutSuccess = (receiptData: any) => {
+  // Callback saat pembayaran sukses di Cart: otomatis simpan ke Riwayat Transaksi & MySQL Backend!
+  const handleCheckoutSuccess = async (receiptData: any) => {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
     const formattedTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -325,9 +393,32 @@ export default function App() {
       cashGiven: receiptData.cashGiven,
       change: receiptData.change,
       status: 'Selesai',
+      isSyncedToDb: false, // Default false sampai terkonfirmasi oleh server
     };
 
+    // Update state tampilan langsung untuk responsivitas instan
     setTransactions((prev) => [newTransaction, ...prev]);
+
+    // Simpan ke MySQL Backend melalui API
+    const saveResult = await saveTransaction(newTransaction);
+    if (saveResult.success) {
+      setIsDbOnline(true);
+      setTransactions((prev) =>
+        prev.map((t) => (t.orderId === newTransaction.orderId ? { ...t, isSyncedToDb: true } : t))
+      );
+      setSyncNotice({
+        type: 'success',
+        title: 'Tersimpan di MySQL',
+        message: `Transaksi ${newTransaction.orderId} sukses tersimpan permanen di database MySQL.`,
+      });
+    } else {
+      setIsDbOnline(false);
+      setSyncNotice({
+        type: 'warning',
+        title: 'Tersimpan Lokal (MySQL Offline)',
+        message: `Transaksi ${newTransaction.orderId} hanya tersimpan di memori browser karena MySQL belum aktif di 127.0.0.1:3306. Data akan disinkronkan saat MySQL menyala.`,
+      });
+    }
   };
 
   return (
@@ -359,7 +450,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setCurrentView('pos')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                   currentView === 'pos'
                     ? 'bg-white text-[#0F5132] shadow-xs'
                     : 'text-gray-600 hover:text-gray-900'
@@ -372,7 +463,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setCurrentView('history')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                   currentView === 'history'
                     ? 'bg-white text-[#0F5132] shadow-xs'
                     : 'text-gray-600 hover:text-gray-900'
@@ -385,6 +476,19 @@ export default function App() {
                 }`}>
                   {transactions.length}
                 </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('manage')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  currentView === 'manage'
+                    ? 'bg-white text-[#0F5132] shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Package size={15} />
+                <span>Kelola Menu</span>
               </button>
             </nav>
           </div>
@@ -403,24 +507,108 @@ export default function App() {
             </div>
           )}
 
-          {/* Kasir Status */}
-          <div className="flex items-center gap-3 text-xs">
-            <div className="hidden sm:flex items-center gap-2 text-gray-600 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
+          {/* Kasir Status & Database Connection Badge */}
+          <div className="flex items-center gap-2.5 text-xs">
+            <div className="hidden xl:flex items-center gap-2 text-gray-600 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
               <Clock size={14} className="text-[#0F5132]" />
               <span>Shift Siang • Kasir 01 (Siti)</span>
             </div>
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" title="Koneksi POS Online" />
+
+            {/* Database Connection Status & Retry Button */}
+            <button
+              type="button"
+              onClick={handleCheckConnection}
+              disabled={isCheckingConn}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                isDbOnline
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                  : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
+              }`}
+              title="Klik untuk cek status MySQL & sinkronkan data offline"
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isDbOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-ping'
+                }`}
+              />
+              <Database size={13} />
+              <span>{isDbOnline ? 'MySQL Online' : 'MySQL Offline (Cek)'}</span>
+              <RefreshCw
+                size={12}
+                className={`ml-0.5 ${isCheckingConn ? 'animate-spin' : ''}`}
+              />
+            </button>
           </div>
         </div>
       </header>
 
       {/* 2. KONTEN UTAMA SESUAI TAB (KASIR POS ATAU RIWAYAT PEMBELIAN) */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6">
-        {currentView === 'history' ? (
+        {/* Sinkronisasi & Peringatan Database Banner */}
+        {syncNotice && (
+          <div
+            className={`mb-4 p-3.5 rounded-xl border flex items-start justify-between gap-3 shadow-xs animate-in fade-in duration-200 ${
+              syncNotice.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : syncNotice.type === 'warning'
+                ? 'bg-amber-50 border-amber-300 text-amber-900'
+                : 'bg-blue-50 border-blue-200 text-blue-900'
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              {syncNotice.type === 'success' ? (
+                <CheckCircle2 size={18} className="text-emerald-600 mt-0.5 shrink-0" />
+              ) : (
+                <AlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+              )}
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wide">
+                  {syncNotice.title}
+                </h4>
+                <p className="text-xs mt-0.5 opacity-90 leading-relaxed">
+                  {syncNotice.message}
+                </p>
+                {!isDbOnline && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCheckConnection}
+                      disabled={isCheckingConn}
+                      className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-md text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <RefreshCw size={11} className={isCheckingConn ? 'animate-spin' : ''} />
+                      Cek Ulang & Sinkronkan
+                    </button>
+                    <span className="text-[11px] text-amber-700 font-medium">
+                      Aktifkan MySQL di Laragon/XAMPP (Port 3306), lalu klik tombol di atas.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSyncNotice(null)}
+              className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer rounded-lg hover:bg-black/5"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
+        {currentView === 'manage' ? (
+          /* ================= HALAMAN KELOLA MENU (PRODUK & KATEGORI) ================= */
+          <ManageMenu
+            products={products}
+            categories={categories}
+            isDbOnline={isDbOnline}
+            onReload={reloadMenuData}
+            onBackToPos={() => setCurrentView('pos')}
+          />
+        ) : currentView === 'history' ? (
           /* ================= HALAMAN RIWAYAT PEMBELIAN ================= */
-          <History 
-            transactions={transactions} 
-            onBackToPos={() => setCurrentView('pos')} 
+          <History
+            transactions={transactions}
+            onBackToPos={() => setCurrentView('pos')}
           />
         ) : (
           /* ================= HALAMAN KASIR POS ================= */
@@ -439,56 +627,26 @@ export default function App() {
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
-                    Semua Menu ({MENU_CATALOG.length})
+                    Semua Menu ({products.length})
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory('makanan')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      activeCategory === 'makanan'
-                        ? 'bg-[#0F5132] text-white shadow-xs'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <UtensilsCrossed size={13} />
-                    Makanan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory('minuman')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      activeCategory === 'minuman'
-                        ? 'bg-[#0F5132] text-white shadow-xs'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Coffee size={13} />
-                    Minuman
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory('snack')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      activeCategory === 'snack'
-                        ? 'bg-[#0F5132] text-white shadow-xs'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Cookie size={13} />
-                    Cemilan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory('paket')}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
-                      activeCategory === 'paket'
-                        ? 'bg-[#0F5132] text-white shadow-xs'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Flame size={13} />
-                    Paket Hemat
-                  </button>
+                  {categories.map((cat) => {
+                    const Icon = CATEGORY_ICONS[cat.slug] || Tag;
+                    return (
+                      <button
+                        key={cat.slug}
+                        type="button"
+                        onClick={() => setActiveCategory(cat.slug)}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
+                          activeCategory === cat.slug
+                            ? "bg-[#0F5132] text-white shadow-xs"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Icon size={13} />
+                        {cat.name}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Notifikasi Tambah Item Singkat */}
@@ -548,7 +706,7 @@ export default function App() {
 
                         {/* Kategori Label di Sudut Bawah Foto */}
                         <span className="absolute bottom-2 left-2 text-[11px] font-medium text-white/95 drop-shadow-xs capitalize">
-                          {item.category}
+                          {categories.find((c) => c.slug === item.category)?.name || item.category}
                         </span>
                       </div>
 
@@ -589,6 +747,7 @@ export default function App() {
                   customerName={customerName}
                   onCustomerNameChange={(name: string) => setCustomerName(name)}
                   onCheckoutSuccess={handleCheckoutSuccess}
+                  isDbOnline={isDbOnline}
                 />
               </div>
             </section>
